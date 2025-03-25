@@ -1,0 +1,136 @@
+
+From abcdef1234567890abcdef1234567890abcdef12 Mon Sep 17 00:00:00 2001
+From: UnityHelper <unity@example.com>
+Date: Mon, 25 Mar 2025 14:00:00 +0000
+Subject: [PATCH] Added shooting system: AutoShooter, WeaponBase, Pistol, Shotgun, Projectile
+
+---
+ Assets/Scripts/AutoShooter.cs | 20 ++++++++++++++++++++
+ Assets/Scripts/WeaponBase.cs  | 18 ++++++++++++++++++
+ Assets/Scripts/Pistol.cs      | 10 ++++++++++
+ Assets/Scripts/Shotgun.cs     | 20 ++++++++++++++++++++
+ Assets/Scripts/Projectile.cs  | 20 ++++++++++++++++++++
+ 5 files changed, 88 insertions(+)
+ create mode 100644 Assets/Scripts/AutoShooter.cs
+ create mode 100644 Assets/Scripts/WeaponBase.cs
+ create mode 100644 Assets/Scripts/Pistol.cs
+ create mode 100644 Assets/Scripts/Shotgun.cs
+ create mode 100644 Assets/Scripts/Projectile.cs
+
+diff --git a/Assets/Scripts/AutoShooter.cs b/Assets/Scripts/AutoShooter.cs
+new file mode 100644
+index 0000000..2222222
+--- /dev/null
++++ b/Assets/Scripts/AutoShooter.cs
+@@
++using UnityEngine;
++
++[RequireComponent(typeof(PlayerMovement))]
++public class AutoShooter : MonoBehaviour {
++    public WeaponBase weapon;
++
++    void Update() {
++        var dir = GetComponent<PlayerMovement>().moveDirection;
++        if (weapon != null && dir.sqrMagnitude > 0.01f) {
++            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
++            weapon.firePoint.rotation = Quaternion.Euler(0, 0, angle);
++            weapon.TryAttack();
++        }
++    }
++}
+diff --git a/Assets/Scripts/WeaponBase.cs b/Assets/Scripts/WeaponBase.cs
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/Assets/Scripts/WeaponBase.cs
+@@
++using UnityEngine;
++
++public abstract class WeaponBase : MonoBehaviour {
++    public float attackCooldown = 0.5f;
++    public int damage = 10;
++    public GameObject projectilePrefab;
++    public Transform firePoint;
++    protected float lastAttackTime = -999f;
++
++    public virtual void TryAttack() {
++        if (Time.time - lastAttackTime >= attackCooldown) {
++            Attack();
++            lastAttackTime = Time.time;
++        }
++    }
++
++    protected abstract void Attack();
++}
+diff --git a/Assets/Scripts/Pistol.cs b/Assets/Scripts/Pistol.cs
+new file mode 100644
+index 0000000..4444444
+--- /dev/null
++++ b/Assets/Scripts/Pistol.cs
+@@
++using UnityEngine;
++
++public class Pistol : WeaponBase {
++    protected override void Attack() {
++        GameObject proj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
++        Projectile p = proj.GetComponent<Projectile>();
++        if (p != null) p.damage = damage;
++    }
++}
+diff --git a/Assets/Scripts/Shotgun.cs b/Assets/Scripts/Shotgun.cs
+new file mode 100644
+index 0000000..5555555
+--- /dev/null
++++ b/Assets/Scripts/Shotgun.cs
+@@
++using UnityEngine;
++
++public class Shotgun : WeaponBase {
++    public int pelletCount = 6;
++    public float spreadAngle = 30f;
++
++    protected override void Attack() {
++        float halfSpread = spreadAngle / 2f;
++        for (int i = 0; i < pelletCount; i++) {
++            float angle = -halfSpread + (spreadAngle / (pelletCount - 1)) * i;
++            Quaternion rot = firePoint.rotation * Quaternion.Euler(0, 0, angle);
++            GameObject proj = Instantiate(projectilePrefab, firePoint.position, rot);
++            Projectile p = proj.GetComponent<Projectile>();
++            if (p != null) p.damage = damage;
++        }
++    }
++}
+diff --git a/Assets/Scripts/Projectile.cs b/Assets/Scripts/Projectile.cs
+new file mode 100644
+index 0000000..6666666
+--- /dev/null
++++ b/Assets/Scripts/Projectile.cs
+@@
++using UnityEngine;
++
++public class Projectile : MonoBehaviour {
++    public float speed = 10f;
++    public float lifeTime = 2f;
++    public int damage = 10;
++    public string targetTag = "Enemy";
++    private Vector3 direction;
++
++    void Start() {
++        Destroy(gameObject, lifeTime);
++        direction = transform.up;
++    }
++
++    void Update() {
++        transform.position += direction * speed * Time.deltaTime;
++    }
++
++    void OnTriggerEnter2D(Collider2D other) {
++        if (!other.CompareTag(targetTag)) return;
++
++        var target = other.GetComponent<EntityStats>();
++        if (target != null) {
++            target.TakeDamage(damage);
++            Destroy(gameObject);
++        }
++    }
++}
