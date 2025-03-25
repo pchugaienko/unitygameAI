@@ -1,0 +1,115 @@
+
+From 1111222233334444555566667777888899990000 Mon Sep 17 00:00:00 2001
+From: UnityHelper <unity@example.com>
+Date: Mon, 25 Mar 2025 18:30:00 +0000
+Subject: [PATCH] Replace FullSceneBuilder.cs with working full-scene creator
+
+---
+ Assets/Editor/FullSceneBuilder.cs | 120 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 120 insertions(+)
+ create mode 100644 Assets/Editor/FullSceneBuilder.cs
+
+diff --git a/Assets/Editor/FullSceneBuilder.cs b/Assets/Editor/FullSceneBuilder.cs
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/Assets/Editor/FullSceneBuilder.cs
+@@
++using UnityEditor;
++using UnityEngine;
++using UnityEditor.SceneManagement;
++using UnityEngine.UI;
++using System.IO;
++
++public class FullSceneBuilder : EditorWindow {
++    [MenuItem("Tools/Setup/Build Full Scene")]
++    public static void BuildScene() {
++        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
++
++        GameObject cam = new GameObject("Main Camera");
++        cam.AddComponent<Camera>().orthographic = true;
++        cam.transform.position = new Vector3(0, 0, -10);
++        cam.tag = "MainCamera";
++
++        GameObject canvasGO = new GameObject("Canvas");
++        var canvas = canvasGO.AddComponent<Canvas>();
++        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
++        canvasGO.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
++        canvasGO.AddComponent<GraphicRaycaster>();
++
++        GameObject player = new GameObject("Player");
++        player.tag = "Player";
++        var rb = player.AddComponent<Rigidbody2D>();
++        rb.gravityScale = 0;
++        player.AddComponent<CircleCollider2D>().isTrigger = true;
++        var sr = player.AddComponent<SpriteRenderer>();
++        sr.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
++        player.AddComponent<PlayerMovement>();
++        var stats = player.AddComponent<EntityStats>();
++        var switcher = player.AddComponent<WeaponSwitcher>();
++
++        GameObject firePoint = new GameObject("FirePoint");
++        firePoint.transform.SetParent(player.transform);
++        firePoint.transform.localPosition = new Vector3(0, 0.5f, 0);
++        firePoint.transform.up = Vector3.up;
++
++        GameObject textGO = new GameObject("PlayerHealthText");
++        textGO.transform.SetParent(canvasGO.transform);
++        var text = textGO.AddComponent<Text>();
++        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
++        text.fontSize = 14;
++        text.alignment = TextAnchor.MiddleCenter;
++        var display = player.AddComponent<HealthDisplay>();
++        display.stats = stats;
++        display.healthText = text;
++
++        GameObject proj = new GameObject("Projectile");
++        proj.AddComponent<Rigidbody2D>().gravityScale = 0;
++        proj.AddComponent<CircleCollider2D>().isTrigger = true;
++        proj.AddComponent<SpriteRenderer>().sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
++        var projScript = proj.AddComponent<Projectile>();
++        projScript.targetTag = "Enemy";
++        Directory.CreateDirectory("Assets/Prefabs");
++        string bulletPath = "Assets/Prefabs/Projectile.prefab";
++        PrefabUtility.SaveAsPrefabAsset(proj, bulletPath);
++        GameObject.DestroyImmediate(proj);
++        var bulletPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(bulletPath);
++
++        GameObject pistolGO = new GameObject("Pistol");
++        pistolGO.transform.SetParent(player.transform);
++        var pistol = pistolGO.AddComponent<Pistol>();
++        pistol.projectilePrefab = bulletPrefab;
++        pistol.firePoint = firePoint.transform;
++
++        GameObject shotgunGO = new GameObject("Shotgun");
++        shotgunGO.transform.SetParent(player.transform);
++        var shotgun = shotgunGO.AddComponent<Shotgun>();
++        shotgun.projectilePrefab = bulletPrefab;
++        shotgun.firePoint = firePoint.transform;
++        shotgunGO.SetActive(false);
++
++        switcher.weapons = new WeaponBase[] { pistol, shotgun };
++        var shooter = player.AddComponent<AutoShooter>();
++        shooter.weapon = pistol;
++
++        GameObject enemy = new GameObject("Enemy");
++        enemy.transform.position = new Vector3(4, 0, 0);
++        enemy.AddComponent<Rigidbody2D>().gravityScale = 0;
++        enemy.AddComponent<CircleCollider2D>().isTrigger = true;
++        enemy.AddComponent<SpriteRenderer>().sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
++        var enemyStats = enemy.AddComponent<EntityStats>();
++        enemy.AddComponent<EnemyAI>();
++
++        GameObject enemyTextGO = new GameObject("EnemyHealthText");
++        enemyTextGO.transform.SetParent(canvasGO.transform);
++        var enemyText = enemyTextGO.AddComponent<Text>();
++        enemyText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
++        enemyText.fontSize = 14;
++        enemyText.alignment = TextAnchor.MiddleCenter;
++        var enemyDisplay = enemy.AddComponent<HealthDisplay>();
++        enemyDisplay.stats = enemyStats;
++        enemyDisplay.healthText = enemyText;
++
++        Debug.Log("✅ Full test scene created. WASD to move, 1/2 to switch weapons, HP display works.");
++    }
++}
