@@ -1,0 +1,90 @@
+
+From def4567890abcdef1234567890abcdef12345678 Mon Sep 17 00:00:00 2001
+From: UnityHelper <unity@example.com>
+Date: Mon, 25 Mar 2025 15:00:00 +0000
+Subject: [PATCH] Added EnemyAI, EntityStats, and HealthDisplay (HP UI)
+
+---
+ Assets/Scripts/EnemyAI.cs       | 15 +++++++++++++++
+ Assets/Scripts/EntityStats.cs   | 20 ++++++++++++++++++++
+ Assets/Scripts/HealthDisplay.cs | 20 ++++++++++++++++++++
+ 3 files changed, 55 insertions(+)
+ create mode 100644 Assets/Scripts/EnemyAI.cs
+ create mode 100644 Assets/Scripts/EntityStats.cs
+ create mode 100644 Assets/Scripts/HealthDisplay.cs
+
+diff --git a/Assets/Scripts/EnemyAI.cs b/Assets/Scripts/EnemyAI.cs
+new file mode 100644
+index 0000000..7777777
+--- /dev/null
++++ b/Assets/Scripts/EnemyAI.cs
+@@
++using UnityEngine;
++
++public class EnemyAI : MonoBehaviour {
++    public float speed = 2f;
++    private Transform player;
++
++    void Start() {
++        GameObject p = GameObject.FindGameObjectWithTag("Player");
++        if (p != null) player = p.transform;
++    }
++
++    void Update() {
++        if (player != null) {
++            Vector3 dir = (player.position - transform.position).normalized;
++            transform.position += dir * speed * Time.deltaTime;
++        }
++    }
++}
+diff --git a/Assets/Scripts/EntityStats.cs b/Assets/Scripts/EntityStats.cs
+new file mode 100644
+index 0000000..8888888
+--- /dev/null
++++ b/Assets/Scripts/EntityStats.cs
+@@
++using UnityEngine;
++
++public class EntityStats : MonoBehaviour {
++    public int maxHealth = 100;
++    public int currentHealth;
++    public float moveSpeed = 1.0f;
++    public float attackSpeed = 0.5f;
++    public int damage = 10;
++
++    void Awake() {
++        currentHealth = maxHealth;
++    }
++
++    public void TakeDamage(int amount) {
++        currentHealth -= amount;
++        if (currentHealth <= 0) Die();
++    }
++
++    protected virtual void Die() {
++        Destroy(gameObject);
++    }
++}
+diff --git a/Assets/Scripts/HealthDisplay.cs b/Assets/Scripts/HealthDisplay.cs
+new file mode 100644
+index 0000000..9999999
+--- /dev/null
++++ b/Assets/Scripts/HealthDisplay.cs
+@@
++using UnityEngine;
++using UnityEngine.UI;
++
++public class HealthDisplay : MonoBehaviour {
++    public EntityStats stats;
++    public Text healthText;
++    public Vector3 offset = new Vector3(0, 1f, 0);
++
++    void Update() {
++        if (stats != null && healthText != null) {
++            healthText.text = stats.currentHealth.ToString();
++            Vector3 worldPos = stats.transform.position + offset;
++            Vector3 screenPos = Camera.main.WorldToScreenPoint(worldPos);
++            healthText.transform.position = screenPos;
++        }
++    }
++}
