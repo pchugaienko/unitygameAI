@@ -1,0 +1,58 @@
+
+From fedcba9876543210fedcba9876543210fedcba98 Mon Sep 17 00:00:00 2001
+From: UnityHelper <unity@example.com>
+Date: Mon, 25 Mar 2025 16:00:00 +0000
+Subject: [PATCH] Added WeaponSwitcher and FullSceneBuilder tool
+
+---
+ Assets/Scripts/WeaponSwitcher.cs        | 20 ++++++++++++++++++++
+ Assets/Editor/FullSceneBuilder.cs       | 20 ++++++++++++++++++++
+ 2 files changed, 40 insertions(+)
+ create mode 100644 Assets/Scripts/WeaponSwitcher.cs
+ create mode 100644 Assets/Editor/FullSceneBuilder.cs
+
+diff --git a/Assets/Scripts/WeaponSwitcher.cs b/Assets/Scripts/WeaponSwitcher.cs
+new file mode 100644
+index 0000000..aaaaaaa
+--- /dev/null
++++ b/Assets/Scripts/WeaponSwitcher.cs
+@@
++using UnityEngine;
++
++public class WeaponSwitcher : MonoBehaviour {
++    public WeaponBase[] weapons;
++
++    void Start() {
++        SwitchTo(0); // default to first
++    }
++
++    void Update() {
++        if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchTo(0);
++        if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchTo(1);
++    }
++
++    void SwitchTo(int index) {
++        for (int i = 0; i < weapons.Length; i++) {
++            if (weapons[i] != null) weapons[i].gameObject.SetActive(i == index);
++        }
++    }
++}
+diff --git a/Assets/Editor/FullSceneBuilder.cs b/Assets/Editor/FullSceneBuilder.cs
+new file mode 100644
+index 0000000..bbbbbbb
+--- /dev/null
++++ b/Assets/Editor/FullSceneBuilder.cs
+@@
++using UnityEditor;
++using UnityEngine;
++using UnityEditor.SceneManagement;
++using UnityEngine.UI;
++using System.IO;
++
++public class FullSceneBuilder : EditorWindow {
++    [MenuItem("Tools/Setup/Build Full Scene")]
++    public static void BuildScene() {
++        EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
++        Debug.Log("✅ Сцена створена. Додайте гравця, ворогів і т.д.");
++    }
++}
